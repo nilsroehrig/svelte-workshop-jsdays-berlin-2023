@@ -1,10 +1,13 @@
 <script>
   import "@fontsource-variable/source-sans-3";
   import transactions from "./data/transactions.js";
+  import { byMonth, byWeek, getCalendarWeek } from "./lib/dates.js";
   import { formatNumberWithCommas } from "./lib/formatters.js";
   import { mapCategoryToEmoji } from "./lib/mappers.js";
+  let filter = "alltime";
 
-  $: sums = transactions.reduce(
+  $: filteredTransactions = applyFilter(filter);
+  $: sums = filteredTransactions.reduce(
     (acc, it) => {
       acc[it.type] += it.amount;
       return acc;
@@ -12,6 +15,18 @@
     { income: 0, expense: 0 }
   );
   $: balance = sums.income - sums.expense;
+
+  function applyFilter(filter) {
+    if (filter === "month") {
+      return transactions.filter(byMonth(new Date().getMonth()));
+    }
+
+    if (filter === "week") {
+      return transactions.filter(byWeek(getCalendarWeek(new Date())));
+    }
+
+    return transactions;
+  }
 </script>
 
 <nav>
@@ -22,6 +37,32 @@
 
 <main>
   <div class="stats">
+    <ul class="stat-filters">
+      <li>
+        <button
+          type="button"
+          class:outline={filter !== "alltime"}
+          class="secondary"
+          on:click={() => (filter = "alltime")}>All time</button
+        >
+      </li>
+      <li>
+        <button
+          type="button"
+          class:outline={filter !== "month"}
+          class="secondary"
+          on:click={() => (filter = "month")}>Monthly</button
+        >
+      </li>
+      <li>
+        <button
+          type="button"
+          class:outline={filter !== "week"}
+          class="outline secondary"
+          on:click={() => (filter = "week")}>Weekly</button
+        >
+      </li>
+    </ul>
     <div class="stat-card" style:grid-column="1 / -1">
       <div class="stat-icon">
         <svg
@@ -131,6 +172,20 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0.75rem;
+  }
+
+  .stat-filters {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 0.75rem;
+    grid-column: 1 / -1;
+  }
+
+  .stat-filters li {
+    list-style: none;
+    flex: 1;
+    margin: 0;
   }
 
   .stat-card {
