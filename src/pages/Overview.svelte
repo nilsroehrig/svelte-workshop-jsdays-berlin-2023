@@ -12,6 +12,7 @@
     sortByDateDesc,
   } from "../lib/dates.js";
   import { mapCategoryToEmoji } from "../lib/mappers.js";
+  import { formatNumberWithCommas } from "../lib/formatters";
 
   const dispatch = createEventDispatcher();
 
@@ -69,14 +70,14 @@
       >
     </li>
   </ul>
-  <StatCard name="Balance" value={balance} class="grid-column-all">
+  <StatCard name="Balance" value="€ {formatNumberWithCommas(balance)}" class="grid-column-all">
     <Money />
   </StatCard>
-  <StatCard name="Income" value={sums.income}>
+  <StatCard name="Income" value="€ {formatNumberWithCommas(sums.income)}">
     <ArrowRectLeft />
   </StatCard>
 
-  <StatCard name="Expenses" value={sums.expense}>
+  <StatCard name="Expenses" value="€ {formatNumberWithCommas(sums.expense)}">
     <ArrowRectRight />
   </StatCard>
 </div>
@@ -91,17 +92,21 @@
       </tr>
     </thead>
     <tbody>
-      {#each filteredTransactions as { category, title, type, amount, date: dateString }}
-        {@const date = new Date(dateString)}
-        <tr>
-          <td title={category}>
-            <span aria-hidden="true">{mapCategoryToEmoji(category)}</span>
-            <span class="visually-hidden">{category}</span>
+      {#each filteredTransactions as transaction}
+        {@const date = new Date(transaction.date)}
+        <tr
+          on:click={() => dispatch("goto:transaction_detail", { transaction })}
+        >
+          <td title={transaction.date}>
+            <span aria-hidden="true"
+              >{mapCategoryToEmoji(transaction.category)}</span
+            >
+            <span class="visually-hidden">{transaction.category}</span>
           </td>
           <td>{date.getDate()}.{date.getMonth() + 1}.</td>
-          <td>{title}</td>
-          <td class="amount {type}">
-            {amount * (type === "income" ? 1 : -1)} €
+          <td>{transaction.title}</td>
+          <td class="amount {transaction.type}">
+            {transaction.amount * (transaction.type === "income" ? 1 : -1)} €
           </td>
         </tr>
       {:else}
@@ -114,12 +119,15 @@
 </div>
 
 <div class="action-bar">
-  <button type="button" on:click={() => dispatch("goto:create-transaction")}>
+  <button type="button" on:click={() => dispatch("goto:create_transaction")}>
     <Plus />
   </button>
 </div>
 
 <style>
+  tbody td {
+    cursor: pointer;
+  }
   .stats {
     display: grid;
     grid-template-columns: 1fr 1fr;

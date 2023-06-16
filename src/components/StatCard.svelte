@@ -10,7 +10,7 @@
     <slot />
   </div>
   <div class="stat-name">{name}</div>
-  <div class="stat-value">€ {formatNumberWithCommas(value)}</div>
+  <div class="stat-value">{value}</div>
 </div>
 
 <style>

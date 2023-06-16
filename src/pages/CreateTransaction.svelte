@@ -1,6 +1,7 @@
 <script>
   import { createEventDispatcher } from "svelte";
-  import ArrowLeft from "../components/icons/ArrowLeft.svelte";
+  import Headline from "../components/Headline.svelte";
+  import { toISO8601Date } from "../lib/formatters";
   import { categories, mapCategoryToEmoji } from "../lib/mappers";
   export let transactions;
 
@@ -15,7 +16,7 @@
     const amount = Number(formData.get("amount"));
     const type = formData.get("type");
     const category = formData.get("category");
-    const date = new Date(String(formData.get("date")));
+    const date = toISO8601Date(new Date(String(formData.get("date"))));
 
     transactions.push({
       id: crypto.randomUUID(),
@@ -33,13 +34,7 @@
   }
 </script>
 
-<div class="headline">
-  <button class="outline secondary back" type="button" on:click={gotoOverview}>
-    <span class="visually-hidden">Zurück</span>
-    <ArrowLeft width={16} height={16} />
-  </button>
-  <h1>Add transaction</h1>
-</div>
+<Headline title="Add Transaction" backButtonCallback={gotoOverview} />
 
 <form action="#" method="post" on:submit|preventDefault={addTransaction}>
   <label class="grid-column-all">
@@ -89,27 +84,10 @@
 </form>
 
 <style>
-  h1 {
-    font-size: 1.25rem;
-    margin: 0;
-    align-self: center;
-  }
-
   form {
     display: grid;
     grid-template-columns: 1fr 1fr;
     column-gap: 0.5rem;
-  }
-
-  .headline {
-    display: grid;
-    grid-template-columns: 1fr max-content 1fr;
-  }
-
-  .back {
-    border: none;
-    width: min-content;
-    margin: 0;
   }
 
   .muted {
