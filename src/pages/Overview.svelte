@@ -1,5 +1,5 @@
 <script>
-  import { createEventDispatcher } from "svelte";
+  import { createEventDispatcher, getContext } from "svelte";
   import StatCard from "../components/StatCard.svelte";
   import ArrowRectLeft from "../components/icons/ArrowRectLeft.svelte";
   import ArrowRectRight from "../components/icons/ArrowRectRight.svelte";
@@ -11,12 +11,11 @@
     getCalendarWeek,
     sortByDateDesc,
   } from "../lib/dates.js";
-  import { mapCategoryToEmoji } from "../lib/mappers.js";
   import { formatNumberWithCommas } from "../lib/formatters";
+  import { mapCategoryToEmoji } from "../lib/mappers.js";
 
   const dispatch = createEventDispatcher();
-
-  export let transactions;
+  const transactions = getContext("transactions");
 
   let filter = "alltime";
 
@@ -32,14 +31,14 @@
 
   function applyFilter(filter) {
     if (filter === "month") {
-      return transactions.filter(byMonth(new Date().getMonth()));
+      return $transactions.filter(byMonth(new Date().getMonth()));
     }
 
     if (filter === "week") {
-      return transactions.filter(byWeek(getCalendarWeek(new Date())));
+      return $transactions.filter(byWeek(getCalendarWeek(new Date())));
     }
 
-    return transactions;
+    return $transactions;
   }
 </script>
 
@@ -70,7 +69,11 @@
       >
     </li>
   </ul>
-  <StatCard name="Balance" value="€ {formatNumberWithCommas(balance)}" class="grid-column-all">
+  <StatCard
+    name="Balance"
+    value="€ {formatNumberWithCommas(balance)}"
+    class="grid-column-all"
+  >
     <Money />
   </StatCard>
   <StatCard name="Income" value="€ {formatNumberWithCommas(sums.income)}">

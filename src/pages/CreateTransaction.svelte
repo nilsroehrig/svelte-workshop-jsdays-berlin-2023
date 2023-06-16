@@ -1,11 +1,11 @@
 <script>
-  import { createEventDispatcher } from "svelte";
+  import { createEventDispatcher, getContext } from "svelte";
   import Headline from "../components/Headline.svelte";
   import { toISO8601Date } from "../lib/formatters";
   import { categories, mapCategoryToEmoji } from "../lib/mappers";
-  export let transactions;
 
   const dispatch = createEventDispatcher();
+  const transactions = getContext("transactions");
 
   let typeValue;
   let categoryValue;
@@ -18,7 +18,7 @@
     const category = formData.get("category");
     const date = toISO8601Date(new Date(String(formData.get("date"))));
 
-    transactions.push({
+    transactions.add({
       id: crypto.randomUUID(),
       title,
       amount,
@@ -26,6 +26,7 @@
       category,
       date,
     });
+
     gotoOverview();
   }
 

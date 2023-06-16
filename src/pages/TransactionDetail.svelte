@@ -1,22 +1,33 @@
 <script>
-  import { createEventDispatcher } from "svelte";
+  import { createEventDispatcher, getContext } from "svelte";
   import Headline from "../components/Headline.svelte";
   import StatCard from "../components/StatCard.svelte";
   import Calendar from "../components/icons/Calendar.svelte";
   import Money from "../components/icons/Money.svelte";
   import Tag from "../components/icons/Tag.svelte";
   import Trash from "../components/icons/Trash.svelte";
-  import { capitalize, formatNumberWithCommas, prettifyDate } from "../lib/formatters";
+  import {
+    capitalize,
+    formatNumberWithCommas,
+    prettifyDate,
+  } from "../lib/formatters";
   import { mapCategoryToEmoji } from "../lib/mappers";
 
   const dispatch = createEventDispatcher();
+  const transactions = getContext("transactions");
   export let transaction;
+
+  function removeTransaction(transaction) {
+    transactions.remove(transaction);
+    gotoOverview();
+  }
+
+  function gotoOverview() {
+    dispatch("goto:overview");
+  }
 </script>
 
-<Headline
-  title={transaction.title}
-  backButtonCallback={() => dispatch("goto:overview")}
-/>
+<Headline title={transaction.title} backButtonCallback={gotoOverview} />
 
 <div class="stats">
   <StatCard
@@ -35,15 +46,16 @@
   >
     <Tag />
   </StatCard>
-  <StatCard name="Date" value={prettifyDate(transaction.date)} class="grid-column-all">
+  <StatCard
+    name="Date"
+    value={prettifyDate(transaction.date)}
+    class="grid-column-all"
+  >
     <Calendar />
   </StatCard>
 </div>
 
-<button
-  type="button"
-  on:click={() => dispatch("transaction:remove", { id: transaction.id })}
->
+<button type="button" on:click={() => removeTransaction(transaction)}>
   <Trash />
   Remove Transaction
 </button>
