@@ -5,11 +5,13 @@
   "type": "module",
   "license": "ISC",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"npm run vite\" \"npm run server\"",
+    "vite": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext .js,.svelte --fix",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "server": "json-server --watch db.json"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^2.4.6",
