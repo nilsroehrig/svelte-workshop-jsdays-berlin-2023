@@ -1,11 +1,10 @@
 <script>
-  import { createEventDispatcher, getContext } from "svelte";
+  import { createEventDispatcher } from "svelte";
   import Headline from "../components/Headline.svelte";
   import { toISO8601Date } from "../lib/formatters";
   import { categories, mapCategoryToEmoji } from "../lib/mappers";
 
   const dispatch = createEventDispatcher();
-  const transactions = getContext("transactions");
 
   let typeValue;
   let categoryValue;
@@ -18,16 +17,20 @@
     const category = formData.get("category");
     const date = toISO8601Date(new Date(String(formData.get("date"))));
 
-    transactions.add({
-      id: crypto.randomUUID(),
-      title,
-      amount,
-      type,
-      category,
-      date,
-    });
-
-    gotoOverview();
+    fetch("/api/transactions", {
+      method: "POST",
+      body: JSON.stringify({
+        id: crypto.randomUUID(),
+        title,
+        amount,
+        type,
+        category,
+        date,
+      }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }).then(gotoOverview);
   }
 
   function gotoOverview() {

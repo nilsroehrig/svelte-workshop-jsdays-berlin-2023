@@ -1,5 +1,5 @@
 <script>
-  import { createEventDispatcher, getContext } from "svelte";
+  import { createEventDispatcher } from "svelte";
   import Headline from "../components/Headline.svelte";
   import StatCard from "../components/StatCard.svelte";
   import Calendar from "../components/icons/Calendar.svelte";
@@ -14,12 +14,12 @@
   import { mapCategoryToEmoji } from "../lib/mappers";
 
   const dispatch = createEventDispatcher();
-  const transactions = getContext("transactions");
   export let transaction;
 
   function removeTransaction(transaction) {
-    transactions.remove(transaction);
-    gotoOverview();
+    fetch(`/api/transactions/${transaction.id}`, {
+      method: "DELETE",
+    }).then(gotoOverview);
   }
 
   function gotoOverview() {

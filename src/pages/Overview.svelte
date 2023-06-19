@@ -1,5 +1,6 @@
 <script>
-  import { createEventDispatcher, getContext } from "svelte";
+  import { createEventDispatcher } from "svelte";
+  import { fade } from "svelte/transition";
   import StatCard from "../components/StatCard.svelte";
   import ArrowRectLeft from "../components/icons/ArrowRectLeft.svelte";
   import ArrowRectRight from "../components/icons/ArrowRectRight.svelte";
@@ -15,111 +16,126 @@
   import { mapCategoryToEmoji } from "../lib/mappers.js";
 
   const dispatch = createEventDispatcher();
-  const transactions = getContext("transactions");
 
   let filter = "alltime";
 
-  $: filteredTransactions = applyFilter(filter).sort(sortByDateDesc);
-  $: sums = filteredTransactions.reduce(
-    (acc, it) => {
-      acc[it.type] += it.amount;
-      return acc;
-    },
-    { income: 0, expense: 0 }
-  );
-  $: balance = sums.income - sums.expense;
-
-  function applyFilter(filter) {
+  function applyFilter(filter, transactions) {
     if (filter === "month") {
-      return $transactions.filter(byMonth(new Date().getMonth()));
+      return transactions.filter(byMonth(new Date().getMonth()));
     }
 
     if (filter === "week") {
-      return $transactions.filter(byWeek(getCalendarWeek(new Date())));
+      return transactions.filter(byWeek(getCalendarWeek(new Date())));
     }
 
-    return $transactions;
+    return transactions;
+  }
+
+  function fetchTransactions() {
+    return fetch("/api/transactions").then((res) => res.json());
+  }
+
+  function calculateSums(transactions) {
+    return transactions.reduce(
+      (acc, it) => {
+        acc[it.type] += it.amount;
+        return acc;
+      },
+      { income: 0, expense: 0 }
+    );
   }
 </script>
 
-<div class="stats">
-  <ul class="stat-filters">
-    <li>
-      <button
-        type="button"
-        class:outline={filter !== "alltime"}
-        class="secondary"
-        on:click={() => (filter = "alltime")}>All time</button
-      >
-    </li>
-    <li>
-      <button
-        type="button"
-        class:outline={filter !== "month"}
-        class="secondary"
-        on:click={() => (filter = "month")}>Monthly</button
-      >
-    </li>
-    <li>
-      <button
-        type="button"
-        class:outline={filter !== "week"}
-        class="outline secondary"
-        on:click={() => (filter = "week")}>Weekly</button
-      >
-    </li>
-  </ul>
-  <StatCard
-    name="Balance"
-    value="€ {formatNumberWithCommas(balance)}"
-    class="grid-column-all"
-  >
-    <Money />
-  </StatCard>
-  <StatCard name="Income" value="€ {formatNumberWithCommas(sums.income)}">
-    <ArrowRectLeft />
-  </StatCard>
+{#await fetchTransactions()}
+  <article aria-busy="true" />
+{:then transactions}
+  {@const filteredTransactions = applyFilter(filter, transactions).sort(
+    sortByDateDesc
+  )}
+  {@const { income, expense } = calculateSums(filteredTransactions)}
+  {@const balance = income - expense}
 
-  <StatCard name="Expenses" value="€ {formatNumberWithCommas(sums.expense)}">
-    <ArrowRectRight />
-  </StatCard>
-</div>
-<div class="transaction-container">
-  <table class="transactions">
-    <thead>
-      <tr>
-        <th>Cat.</th>
-        <td>Date</td>
-        <th>Title</th>
-        <th class="amount">Amount</th>
-      </tr>
-    </thead>
-    <tbody>
-      {#each filteredTransactions as transaction}
-        {@const date = new Date(transaction.date)}
-        <tr
-          on:click={() => dispatch("goto:transaction_detail", { transaction })}
+  <div class="stats">
+    <ul class="stat-filters">
+      <li>
+        <button
+          type="button"
+          class:outline={filter !== "alltime"}
+          class="secondary"
+          on:click={() => (filter = "alltime")}>All time</button
         >
-          <td title={transaction.date}>
-            <span aria-hidden="true"
-              >{mapCategoryToEmoji(transaction.category)}</span
-            >
-            <span class="visually-hidden">{transaction.category}</span>
-          </td>
-          <td>{date.getDate()}.{date.getMonth() + 1}.</td>
-          <td>{transaction.title}</td>
-          <td class="amount {transaction.type}">
-            {transaction.amount * (transaction.type === "income" ? 1 : -1)} €
-          </td>
-        </tr>
-      {:else}
+      </li>
+      <li>
+        <button
+          type="button"
+          class:outline={filter !== "month"}
+          class="secondary"
+          on:click={() => (filter = "month")}>Monthly</button
+        >
+      </li>
+      <li>
+        <button
+          type="button"
+          class:outline={filter !== "week"}
+          class="outline secondary"
+          on:click={() => (filter = "week")}>Weekly</button
+        >
+      </li>
+    </ul>
+    <StatCard
+      name="Balance"
+      value="€ {formatNumberWithCommas(balance)}"
+      class="grid-column-all"
+    >
+      <Money />
+    </StatCard>
+    <StatCard name="Income" value="€ {formatNumberWithCommas(income)}">
+      <ArrowRectLeft />
+    </StatCard>
+
+    <StatCard name="Expenses" value="€ {formatNumberWithCommas(expense)}">
+      <ArrowRectRight />
+    </StatCard>
+  </div>
+  <div class="transaction-container">
+    <table class="transactions">
+      <thead>
         <tr>
-          <td colspan="3"> No Transactions yet. </td>
+          <th>Cat.</th>
+          <td>Date</td>
+          <th class="title">Title</th>
+          <th class="amount">Amount</th>
         </tr>
-      {/each}
-    </tbody>
-  </table>
-</div>
+      </thead>
+      <tbody>
+        {#each filteredTransactions as transaction (transaction.id)}
+          {@const date = new Date(transaction.date)}
+          <tr
+            on:click={() =>
+              dispatch("goto:transaction_detail", { transaction })}
+            transition:fade
+          >
+            <td title={transaction.date}>
+              <span aria-hidden="true"
+                >{mapCategoryToEmoji(transaction.category)}</span
+              >
+              <span class="visually-hidden">{transaction.category}</span>
+            </td>
+            <td>{date.getDate()}.{date.getMonth() + 1}.</td>
+            <td>{transaction.title}</td>
+            <td class="amount {transaction.type}">
+              {transaction.amount * (transaction.type === "income" ? 1 : -1)} €
+            </td>
+          </tr>
+        {:else}
+          <tr>
+            <td colspan="3"> No Transactions yet. </td>
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+  </div>
+{/await}
 
 <div class="action-bar">
   <button type="button" on:click={() => dispatch("goto:create_transaction")}>
@@ -156,6 +172,10 @@
   }
   .transactions {
     margin-top: 1rem;
+  }
+
+  .title {
+    width: 100%;
   }
 
   .amount {
